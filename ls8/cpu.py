@@ -12,6 +12,15 @@ class CPU:
         self.register = [0] * 8
         self.pc = 0
 
+    def ram_read(self, addr):
+        if addr < len(self.ram):
+            return self.ram[addr]
+        return None
+
+    def ram_write(self, val, addr):
+        if addr < len(self.ram):
+            self.ram[addr] = val
+
     def load(self):
         """Load a program into memory."""
 
