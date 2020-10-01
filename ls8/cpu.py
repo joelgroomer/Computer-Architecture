@@ -221,7 +221,7 @@ class CPU:
         if reg >= 0 and reg <= 7:    # should this be 4 since 5,6,7 are reserved?
             self.reg[reg] = val
         else:
-            raise Exception(f"Invalid register requested: {reg}")
+            raise Exception(f"Invalid register requested for LDI: {reg}")
 
     def NOP(self):
         raise Exception("Instruction not yet implemented: NOP")
@@ -233,7 +233,10 @@ class CPU:
         raise Exception("Instruction not yet implemented: PRA")
 
     def PRN(self, reg):
-        raise Exception("Instruction not yet implemented: PRN")
+        if reg >= 0 and reg <= 7:    # should this be 4 since 5,6,7 are reserved?
+            print(self.reg[reg])
+        else:
+            raise Exception(f"Invalid register requested for PRN: {reg}")
 
     def PUSH(self, reg):
         raise Exception("Instruction not yet implemented: PUSH")
