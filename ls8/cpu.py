@@ -217,7 +217,11 @@ class CPU:
         raise Exception("Instruction not yet implemented: LD")
 
     def LDI(self, reg, val):
-        raise Exception("Instruction not yet implemented: LDI")
+        # Load value into a register
+        if reg >= 0 and reg <= 7:    # should this be 4 since 5,6,7 are reserved?
+            self.reg[reg] = val
+        else:
+            raise Exception(f"Invalid register requested: {reg}")
 
     def NOP(self):
         raise Exception("Instruction not yet implemented: NOP")
