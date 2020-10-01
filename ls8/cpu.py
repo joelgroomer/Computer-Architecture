@@ -182,60 +182,60 @@ class CPU:
                 # three-byte (two operand) instructions
                 self.pc += 3
 
-    # Implementation of non-ALU instructions
-    def CALL(self):
+    # Implementation of non-ALU instructions handlers
+    def CALL(self, reg):
         raise Exception("Instruction not yet implemented: CALL")
 
-    def INT(self):
+    def INT(self, reg):
         raise Exception("Instruction not yet implemented: INT")
 
     def IRET(self):
         raise Exception("Instruction not yet implemented: IRET")
 
-    def JEQ(self):
+    def JEQ(self, reg):
         raise Exception("Instruction not yet implemented: JEQ")
 
-    def JGE(self):
+    def JGE(self, reg):
         raise Exception("Instruction not yet implemented: JGE")
 
-    def JGT(self):
+    def JGT(self, reg):
         raise Exception("Instruction not yet implemented: JGT")
 
-    def JLE(self):
+    def JLE(self, reg):
         raise Exception("Instruction not yet implemented: JLE")
 
-    def JLT(self):
+    def JLT(self, reg):
         raise Exception("Instruction not yet implemented: JLT")
 
-    def JMP(self):
+    def JMP(self, reg):
         raise Exception("Instruction not yet implemented: JMP")
 
-    def JNE(self):
+    def JNE(self, reg):
         raise Exception("Instruction not yet implemented: JNE")
 
-    def LD(self):
+    def LD(self, reg_a, reg_b):
         raise Exception("Instruction not yet implemented: LD")
 
-    def LDI(self):
+    def LDI(self, reg, val):
         raise Exception("Instruction not yet implemented: LDI")
 
     def NOP(self):
         raise Exception("Instruction not yet implemented: NOP")
 
-    def POP(self):
+    def POP(self, reg):
         raise Exception("Instruction not yet implemented: POP")
 
-    def PRA(self):
+    def PRA(self, reg):
         raise Exception("Instruction not yet implemented: PRA")
 
-    def PRN(self):
+    def PRN(self, reg):
         raise Exception("Instruction not yet implemented: PRN")
 
-    def PUSH(self):
+    def PUSH(self, reg):
         raise Exception("Instruction not yet implemented: PUSH")
 
     def RET(self):
         raise Exception("Instruction not yet implemented: RET")
 
-    def ST(self):
+    def ST(self, reg_a, reg_b):
         raise Exception("Instruction not yet implemented: ST")
