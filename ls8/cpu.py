@@ -69,15 +69,27 @@ class CPU:
 
         # For now, we've just hardcoded a program:
 
-        program = [
-            # From print8.ls8
-            0b10000010,  # LDI R0,8
-            0b00000000,
-            0b00001000,
-            0b01000111,  # PRN R0
-            0b00000000,
-            0b00000001,  # HLT
-        ]
+        program = []
+
+        if len(sys.argv) != 2:
+            print(f"Usage:\npython3 {sys.argv[0]} filename.ls8")
+            exit()
+        try:
+            with open(sys.argv[1]) as f:
+                for line in f:
+                    possible_num = line[:line.find('#')]    # strip comments
+                    if possible_num == '':                  # strip blank lines
+                        continue
+                    # convert "binary" string into a number
+                    program[address] = (int(possible_num, 2))
+                    address += 1
+                    if address == 256:
+                        raise Exception("Out of memory. Program is too large.")
+
+        except FileNotFoundError:
+            raise Exception(f"{sys.argv[1]} not found.")
+        except:
+            raise Exception(f"Unable to read file {sys.argv[1]}")
 
         for instruction in program:
             self.ram[address] = instruction
