@@ -66,10 +66,9 @@ class CPU:
         """Load a program into memory."""
 
         address = 0
+        load_address = 0
 
-        # For now, we've just hardcoded a program:
-
-        program = []
+        program = [0] * 256
 
         if len(sys.argv) != 2:
             print(f"Usage:\npython3 {sys.argv[0]} filename.ls8")
@@ -81,15 +80,14 @@ class CPU:
                     if possible_num == '':                  # strip blank lines
                         continue
                     # convert "binary" string into a number
-                    program[address] = (int(possible_num, 2))
-                    address += 1
-                    if address == 256:
+                    program[load_address] = (int(possible_num, 2))
+                    load_address += 1
+                    if load_address == 256:
                         raise Exception("Out of memory. Program is too large.")
 
         except FileNotFoundError:
-            raise Exception(f"{sys.argv[1]} not found.")
-        except:
-            raise Exception(f"Unable to read file {sys.argv[1]}")
+            print(f"{sys.argv[1]} not found.")
+            exit()
 
         for instruction in program:
             self.ram[address] = instruction
@@ -113,7 +111,7 @@ class CPU:
         elif op == "MOD":
             raise Exception("Instruction not yet implemented: MOD")
         elif op == "MUL":
-            raise Exception("Instruction not yet implemented: MUL")
+            self.reg[reg_a] *= self.reg[reg_b]
         elif op == "NOT":
             raise Exception("Instruction not yet implemented: NOT")
         elif op == "OR":
