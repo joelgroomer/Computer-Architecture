@@ -99,31 +99,55 @@ class CPU:
         if op == "ADD":
             self.reg[reg_a] += self.reg[reg_b]
         elif op == "AND":
-            raise Exception("Instruction not yet implemented: AND")
+            self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
         elif op == "CMP":
-            raise Exception("Instruction not yet implemented: CMP")
+            """
+            The flags register FL holds the current flags status. These flags can change based on the 
+            operands given to the CMP opcode.
+            The register is made up of 8 bits. If a particular bit is set, that flag is "true".
+
+            FL bits: 00000LGE
+
+            L Less-than: during a CMP, set to 1 if registerA is less than registerB, zero otherwise.
+            G Greater-than: during a CMP, set to 1 if registerA is greater than registerB, zero otherwise.
+            E Equal: during a CMP, set to 1 if registerA is equal to registerB, zero otherwise.
+            """
+
+            if self.reg[reg_a] == self.reg[reg_b]:
+                self.fl = 1
+            elif self.reg[reg_a] > self.reg[reg_b]:
+                self.fl = 2
+            elif self.reg[reg_a] < self.reg[reg_b]:
+                self.fl = 4
+            else:
+                raise Exception(
+                    "CMP: Invalid inputs or error computing result")
         elif op == "DEC":
-            raise Exception("Instruction not yet implemented: DEC")
+            self.reg[reg_a] -= 1
         elif op == "DIV":
-            raise Exception("Instruction not yet implemented: DIV")
+            if self.reg[reg_b]:
+                raise Exception("DIV: Division by zero")
+            self.reg[reg_a] /= self.reg[reg_b]
         elif op == "INC":
-            raise Exception("Instruction not yet implemented: INC")
+            self.reg[reg_a] += 1
         elif op == "MOD":
-            raise Exception("Instruction not yet implemented: MOD")
+            if self.reg[reg_b]:
+                raise Exception("MOD: Division by zero")
+            self.reg[reg_a] = self.reg[reg_a] % self.reg[reg_b]
         elif op == "MUL":
             self.reg[reg_a] *= self.reg[reg_b]
         elif op == "NOT":
-            raise Exception("Instruction not yet implemented: NOT")
+            self.reg[reg_a] = ~self.reg[reg_a]
         elif op == "OR":
-            raise Exception("Instruction not yet implemented: OR")
+            self.reg[reg_a] = self.reg[reg_a] | self.reg[reg_b]
         elif op == "SHL":
-            raise Exception("Instruction not yet implemented: SHL")
+            self.reg[reg_a] = self.reg[reg_a] << self.reg[reg_b]
         elif op == "SHR":
-            raise Exception("Instruction not yet implemented: SHR")
+            self.reg[reg_a] = self.reg[reg_a] >> self.reg[reg_b]
         elif op == "SUB":
-            raise Exception("Instruction not yet implemented: SUB")
+            self.reg[reg_a] -= self.reg[reg_b]
         elif op == "XOR":
-            raise Exception("Instruction not yet implemented: XOR")
+            self.reg[reg_a] = self.reg[reg_a] ^ self.reg[reg_b]
         else:
             raise Exception("Unsupported ALU operation")
 
