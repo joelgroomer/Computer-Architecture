@@ -152,45 +152,50 @@ class CPU:
 
         running = True
         while running:
+            """
+            Meanings of the bits in the first byte of each instruction: AABCDDDD
+
+            AA Number of operands for this opcode, 0-2
+            B 1 if this is an ALU operation
+            C 1 if this instruction sets the PC
+            DDDD Instruction identifier
+            """
+
             # read the byte at the program counter into the Instruction Register
             ir = self.ram_read(self.pc)
-            # read the next two bytes in case the instruction
+            # read the next two bytes in case the instruction needs to utilize them
+            num_operands = ir >> 6
             operand_a = self.ram_read(self.pc + 1)
-            operand_b = self.ram_read(self.pc + 2)  # ...needs to utilize them
+            operand_b = self.ram_read(self.pc + 2)
 
             if ir not in instr:
                 raise Exception(f"Invlaid instruction {ir}. Terminating.")
 
             # Direct the CPU to follow the correct instruction
-            if ir == 1:
+            # print(f"ir: {ir}, instr: {instr[ir]}")
+            if instr[ir] == "HLT":
                 # HLT "halt" instruction, ends program
                 exit()
-            elif ir & 0b00100000 == 32:
+            elif (ir >> 5) & 0b001:
                 # this is an ALU instruction - transfer to ALU
                 self.alu(instr[ir], operand_a, operand_b)
-            elif ir & 0b11000000 == 0:
+            elif num_operands == 0:
                 # single byte instructions (no operands)
                 getattr(self, instr[ir])()
-            elif ir & 0b11000000 == 64:
+            elif num_operands == 1:
                 # two-bye (one operand) instructions
                 getattr(self, instr[ir])(operand_a)
-            elif ir & 0b11000000 == 128:
+            elif num_operands == 2:
                 # three-byte (two operand) instructions
                 getattr(self, instr[ir])(operand_a, operand_b)
 
             # Move the Program Counter
-            if ir & 0b00010000 == 16:
+            if ir >> 4 & 0b0001:
                 # this instruction set the PC, so we won't move it.
                 continue
-            elif ir & 0b11000000 == 0:
-                # single byte instructions (no operands)
-                self.pc += 1
-            elif ir & 0b11000000 == 64:
-                # two-bye (one operand) instructions
-                self.pc += 2
-            elif ir & 0b11000000 == 128:
-                # three-byte (two operand) instructions
-                self.pc += 3
+            else:
+                # move the PC forward by one + the number of operands used
+                self.pc += num_operands + 1
 
     # Implementation of non-ALU instructions handlers
     def CALL(self, reg):
