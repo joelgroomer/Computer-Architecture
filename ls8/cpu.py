@@ -226,7 +226,22 @@ class CPU:
 
     # Implementation of non-ALU instructions handlers
     def CALL(self, reg):
-        raise Exception("Instruction not yet implemented: CALL")
+        """
+        Calls a subroutine (function) at the address stored in the register.
+
+        1. The address of the instruction directly after CALL is pushed onto the stack. This allows
+           us to return to where we left off when the subroutine finishes executing.
+        2. The PC is set to the address stored in the given register. We jump to that location in
+           RAM and execute the first instruction in the subroutine. The PC can move forward or backwards
+           from its current location.
+        """
+
+        # PUSH
+        self.reg[7] -= 1
+        self.ram_write(self.pc + 2, self.reg[7])
+
+        # Set PC to address in the given reg
+        self.pc = self.reg[reg]
 
     def INT(self, reg):
         raise Exception("Instruction not yet implemented: INT")
@@ -250,7 +265,10 @@ class CPU:
         raise Exception("Instruction not yet implemented: JLT")
 
     def JMP(self, reg):
-        raise Exception("Instruction not yet implemented: JMP")
+        """
+        Jump (set the PC) to the address stored in the given register.
+        """
+        self.pc = self.reg[reg]
 
     def JNE(self, reg):
         raise Exception("Instruction not yet implemented: JNE")
@@ -299,7 +317,14 @@ class CPU:
         self.ram_write(self.reg[reg], self.reg[7])
 
     def RET(self):
-        raise Exception("Instruction not yet implemented: RET")
+        """
+        Return from subroutine.
+        Pop the value from the top of the stack and store it in the PC.
+        """
+
+        # POP
+        self.pc = self.ram_read(self.reg[7])
+        self.reg[7] += 1
 
     def ST(self, reg_a, reg_b):
         raise Exception("Instruction not yet implemented: ST")
