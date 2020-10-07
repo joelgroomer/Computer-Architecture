@@ -56,11 +56,14 @@ class CPU:
     def ram_read(self, addr):
         if addr < len(self.ram):
             return self.ram[addr]
-        return None
+        else:
+            raise Exception("Memory address out of range!")
 
     def ram_write(self, val, addr):
         if addr < len(self.ram):
             self.ram[addr] = val
+        else:
+            raise Exception("Memory address out of range!")
 
     def load(self):
         """Load a program into memory."""
@@ -102,7 +105,7 @@ class CPU:
             self.reg[reg_a] = self.reg[reg_a] & self.reg[reg_b]
         elif op == "CMP":
             """
-            The flags register FL holds the current flags status. These flags can change based on the 
+            The flags register FL holds the current flags status. These flags can change based on the
             operands given to the CMP opcode.
             The register is made up of 8 bits. If a particular bit is set, that flag is "true".
 
@@ -256,8 +259,8 @@ class CPU:
         raise Exception("Instruction not yet implemented: LD")
 
     def LDI(self, reg, val):
-        # Load value into a register
-        if reg >= 0 and reg <= 7:    # should this be 4 since 5,6,7 are reserved?
+        # Load immediate value into a register
+        if reg >= 0 and reg <= 7:
             self.reg[reg] = val
         else:
             raise Exception(f"Invalid register requested for LDI: {reg}")
@@ -266,19 +269,34 @@ class CPU:
         raise Exception("Instruction not yet implemented: NOP")
 
     def POP(self, reg):
-        raise Exception("Instruction not yet implemented: POP")
+        """
+        Pop the value at the top of the stack into the given register.
+        1. Copy the value from the address pointed to by SP to the given register.
+        2. Increment SP.
+        """
+        self.reg[reg] = self.ram_read(self.reg[7])
+        self.reg[7] += 1
 
     def PRA(self, reg):
         raise Exception("Instruction not yet implemented: PRA")
 
     def PRN(self, reg):
+        """
+        Print to the console the decimal integer value that is stored in the given register.
+        """
         if reg >= 0 and reg <= 7:    # should this be 4 since 5,6,7 are reserved?
             print(self.reg[reg])
         else:
             raise Exception(f"Invalid register requested for PRN: {reg}")
 
     def PUSH(self, reg):
-        raise Exception("Instruction not yet implemented: PUSH")
+        """
+        Push the value in the given register on the stack.
+        1. Decrement the SP.
+        2. Copy the value in the given register to the address pointed to by SP.
+        """
+        self.reg[7] -= 1
+        self.ram_write(self.reg[reg], self.reg[7])
 
     def RET(self):
         raise Exception("Instruction not yet implemented: RET")
