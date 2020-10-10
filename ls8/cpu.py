@@ -1,6 +1,12 @@
 """CPU functionality."""
 
 import sys
+import datetime
+
+# register psuedonyms
+IM = 5  # interrupt mask
+IS = 6  # interrupt status
+SP = 7  # stack pointer
 
 # instruction psuedonyms
 instr = {
@@ -47,11 +53,19 @@ class CPU:
     def __init__(self):
         """Construct a new CPU."""
         self.reg = [0] * 8
+        # R5 is reserved as the interrupt mask (IM)
+        self.reg[IM] = 0b00000001
+        # R6 is reserved as the interrupt status (IS)
         # Register 7 is the stack pointer, 0xF4 means stack is empty
-        self.reg[7] = 0xF4
+        self.reg[SP] = 0xF4
+        # Program Counter - location of currently executing instruction in RAM
         self.pc = 0
-        self.fl = 0
+        self.fl = 0             # flags - holds results of CMP instruction
         self.ram = [0] * 256
+
+        self.interrupts_enabled = True
+
+        self.clock_tick = datetime.datetime.now().second
 
     def ram_read(self, addr):
         if addr < len(self.ram):
@@ -179,6 +193,14 @@ class CPU:
 
         running = True
         while running:
+            if self.interrupts_enabled:
+                if datetime.datetime.now().second - self.clock_tick >= 1:
+                    self.clock_tick = datetime.datetime.now().second
+                    # issue the time interrupt
+                    self.reg[IS] = self.reg[IS] | 0b00000001
+
+            self.check_interrupts()
+
             """
             Meanings of the bits in the first byte of each instruction: AABCDDDD
 
@@ -199,7 +221,6 @@ class CPU:
                 raise Exception(f"Invlaid instruction {ir}. Terminating.")
 
             # Direct the CPU to follow the correct instruction
-            # print(f"ir: {ir}, instr: {instr[ir]}")
             if instr[ir] == "HLT":
                 # HLT "halt" instruction, ends program
                 exit()
@@ -224,6 +245,59 @@ class CPU:
                 # move the PC forward by one + the number of operands used
                 self.pc += num_operands + 1
 
+    def check_interrupts(self):
+        """
+        There are 8 interrupts, I0-I7.
+
+        When an interrupt occurs from an external source or from an INT instruction, the appropriate 
+        bit in the IS register will be set.
+
+        Prior to instruction fetch, the following steps occur:
+        1. The IM register is bitwise AND-ed with the IS register and the results stored as `maskedInterrupts`.
+        2. Each bit of `maskedInterrupts` is checked, starting from 0 and going up to the 7th bit, one for each
+            interrupt.
+        3. If a bit is found to be set, follow the next sequence of steps. Stop further checking of 
+            `maskedInterrupts`.
+
+        If a bit is set:
+        1. Disable further interrupts.
+        2. Clear the bit in the IS register.
+        3. The PC register is pushed on the stack.
+        4. The FL register is pushed on the stack.
+        5. Registers R0-R6 are pushed on the stack in that order.
+        6. The address (vector in interrupt terminology) of the appropriate handler is looked up from
+            the interrupt vector table.
+        7. Set the PC is set to the handler address.
+        """
+
+        maskedInterrupts = self.reg[IM] & self.reg[IS]
+
+        for i in range(8):
+            check = 1 << i
+            if maskedInterrupts & check:
+                # Disable further interrupts
+                self.interrupts_enabled = False
+
+                # Clear the bit in the IS register
+                self.reg[IS] = self.reg[IS] ^ check
+
+                # push PC
+                self.reg[SP] -= 1
+                self.ram_write(self.pc, self.reg[SP])
+                # push FL
+                self.reg[SP] -= 1
+                self.ram_write(self.fl, self.reg[SP])
+                # push registers 0 - 6
+                for r in range(7):
+                    self.PUSH(r)
+
+                # set PC to interrupt handler vector
+                # (vector table starts at 0xF8 in RAM)
+                self.pc = self.ram_read(0xF8 + i)
+
+                # stop further checking of maskedInterrupts
+                break
+
     # Implementation of non-ALU instructions handlers
     def CALL(self, reg):
         """
@@ -237,17 +311,46 @@ class CPU:
         """
 
         # PUSH
-        self.reg[7] -= 1
-        self.ram_write(self.pc + 2, self.reg[7])
+        self.reg[SP] -= 1
+        self.ram_write(self.pc + 2, self.reg[SP])
 
         # Set PC to address in the given reg
         self.pc = self.reg[reg]
 
     def INT(self, reg):
-        raise Exception("Instruction not yet implemented: INT")
+        """
+        Issue the interrupt number stored in the given register.
+        This will set the _n_th bit in the IS register to the value in the given register.
+        R6 is reserved as the interrupt status (IS)
+        """
+        interrupt_num = self.reg[reg]   # get the number of the interrupt from the given register
+        if interrupt_num < 0 or interrupt_num > 7:
+            raise Exception(
+                f"INT: Invalid interrupt provided: {interrupt_num}")
+
+        # set the appropriate bit for the requested interrupt
+        self.reg[IS] = self.reg[IS] | (0b1 << interrupt_num)
 
     def IRET(self):
-        raise Exception("Instruction not yet implemented: IRET")
+        """
+        1. Registers R6-R0 are popped off the stack in that order.
+        2. The FL register is popped off the stack.
+        3. The return address is popped off the stack and stored in PC.
+        4. Interrupts are re-enabled
+        """
+
+        for r in range(6, -1, -1):
+            # pop off values for the states of the six registers that existed
+            # before the interrupt handler was called
+            self.reg[r] = self.ram_read(self.reg[SP])
+            self.reg[SP] += 1
+
+        self.fl = self.ram_read(self.reg[SP])   # pop off FL
+        self.reg[SP] += 1
+        self.pc = self.ram_read(self.reg[SP])   # pop off PC
+        self.reg[SP] += 1
+
+        self.interrupts_enabled = True
 
     def JEQ(self, reg):
         raise Exception("Instruction not yet implemented: JEQ")
@@ -284,7 +387,8 @@ class CPU:
             raise Exception(f"Invalid register requested for LDI: {reg}")
 
     def NOP(self):
-        raise Exception("Instruction not yet implemented: NOP")
+        """ Do nothing """
+        pass
 
     def POP(self, reg):
         """
@@ -292,11 +396,16 @@ class CPU:
         1. Copy the value from the address pointed to by SP to the given register.
         2. Increment SP.
         """
-        self.reg[reg] = self.ram_read(self.reg[7])
-        self.reg[7] += 1
+        self.reg[reg] = self.ram_read(self.reg[SP])
+        self.reg[SP] += 1
 
     def PRA(self, reg):
-        raise Exception("Instruction not yet implemented: PRA")
+        """
+        Print alpha character value stored in the given register.
+        Print to the console the ASCII character corresponding to the value in the register.
+        """
+
+        print(chr(self.reg[reg]))
 
     def PRN(self, reg):
         """
@@ -313,8 +422,8 @@ class CPU:
         1. Decrement the SP.
         2. Copy the value in the given register to the address pointed to by SP.
         """
-        self.reg[7] -= 1
-        self.ram_write(self.reg[reg], self.reg[7])
+        self.reg[SP] -= 1
+        self.ram_write(self.reg[reg], self.reg[SP])
 
     def RET(self):
         """
@@ -323,8 +432,11 @@ class CPU:
         """
 
         # POP
-        self.pc = self.ram_read(self.reg[7])
-        self.reg[7] += 1
+        self.pc = self.ram_read(self.reg[SP])
+        self.reg[SP] += 1
 
     def ST(self, reg_a, reg_b):
-        raise Exception("Instruction not yet implemented: ST")
+        """
+        Store value in reg_b into the address stored in reg_a
+        """
+        self.ram_write(self.reg[reg_b], self.reg[reg_a])
