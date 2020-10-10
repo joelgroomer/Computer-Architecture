@@ -353,19 +353,53 @@ class CPU:
         self.interrupts_enabled = True
 
     def JEQ(self, reg):
-        raise Exception("Instruction not yet implemented: JEQ")
+        """
+        If equal flag is set (true), jump to the address stored in the given register.
+        """
+        if self.fl & 1:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def JGE(self, reg):
-        raise Exception("Instruction not yet implemented: JGE")
+        """
+        If greater-than flag or equal flag is set (true), jump to the address stored in the given register.
+        """
+
+        if self.fl & 1 or self.fl & 0b10:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def JGT(self, reg):
-        raise Exception("Instruction not yet implemented: JGT")
+        """
+        If greater-than flag is set (true), jump to the address stored in the given register.
+        """
+
+        if self.fl & 0b10:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def JLE(self, reg):
-        raise Exception("Instruction not yet implemented: JLE")
+        """
+        If less-than flag or equal flag is set (true), jump to the address stored in the given register.
+        """
+
+        if self.fl & 1 or self.fl & 0b100:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def JLT(self, reg):
-        raise Exception("Instruction not yet implemented: JLT")
+        """
+        If less-than flag is set (true), jump to the address stored in the given register.
+        """
+
+        if self.fl & 0b100:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def JMP(self, reg):
         """
@@ -374,7 +408,14 @@ class CPU:
         self.pc = self.reg[reg]
 
     def JNE(self, reg):
-        raise Exception("Instruction not yet implemented: JNE")
+        """
+        If equal flag is clear (false, 0), jump to the address stored in the given register.
+        """
+
+        if not self.fl & 1:
+            self.JMP(reg)
+        else:
+            self.pc += 2
 
     def LD(self, reg_a, reg_b):
         raise Exception("Instruction not yet implemented: LD")
